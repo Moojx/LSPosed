@@ -17,18 +17,12 @@
  * Copyright (C) 2020 EdXposed Contributors
  * Copyright (C) 2021 LSPosed Contributors
  */
-
 package de.robv.android.xposed;
 
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MemberUtilsX;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,6 +45,8 @@ import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Helpers that simplify hooking and calling methods/constructors, getting and settings fields, ...
@@ -202,6 +198,7 @@ public final class XposedHelpers {
         if (classLoader == null)
             classLoader = XposedBridge.BOOTCLASSLOADER;
         try {
+            XposedBridge.log("findClass:  "+ className);
             return ClassUtils.getClass(classLoader, className, false);
         } catch (ClassNotFoundException e) {
             throw new ClassNotFoundError(e);
@@ -218,6 +215,7 @@ public final class XposedHelpers {
      */
     public static Class<?> findClassIfExists(String className, ClassLoader classLoader) {
         try {
+            XposedBridge.log("findClassIfExists:  "+ className);
             return findClass(className, classLoader);
         } catch (ClassNotFoundError e) {
             return null;
@@ -234,7 +232,7 @@ public final class XposedHelpers {
      */
     public static Field findField(Class<?> clazz, String fieldName) {
         var key = new MemberCacheKey.Field(clazz, fieldName);
-
+        XposedBridge.log("findField:  "+ fieldName);
         return fieldCache.computeIfAbsent(key, k -> {
             try {
                 Field newField = findFieldRecursiveImpl(k.clazz, k.name);
@@ -256,6 +254,7 @@ public final class XposedHelpers {
      */
     public static Field findFieldIfExists(Class<?> clazz, String fieldName) {
         try {
+            XposedBridge.log("findFieldIfExists:  clazz:  "+ clazz.getName()+ "   fieldName:  "+fieldName);
             return findField(clazz, fieldName);
         } catch (NoSuchFieldError e) {
             return null;
@@ -310,7 +309,7 @@ public final class XposedHelpers {
     public static XC_MethodHook.Unhook findAndHookMethod(Class<?> clazz, String methodName, Object... parameterTypesAndCallback) {
         if (parameterTypesAndCallback.length == 0 || !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof XC_MethodHook))
             throw new IllegalArgumentException("no callback defined");
-
+        XposedBridge.log("className:  "+ clazz.getName()+ "   methodName:  " + methodName);
         XC_MethodHook callback = (XC_MethodHook) parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
         Method m = findMethodExact(clazz, methodName, getParameterClasses(clazz.getClassLoader(), parameterTypesAndCallback));
 
@@ -387,6 +386,7 @@ public final class XposedHelpers {
      * @throws ClassNotFoundError In case the target class or one of the parameter types couldn't be resolved.
      */
     public static XC_MethodHook.Unhook findAndHookMethod(String className, ClassLoader classLoader, String methodName, Object... parameterTypesAndCallback) {
+        XposedBridge.log("className:  "+ className+ "   methodName:  " + methodName);
         return findAndHookMethod(findClass(className, classLoader), methodName, parameterTypesAndCallback);
     }
 
@@ -395,6 +395,7 @@ public final class XposedHelpers {
      * See {@link #findMethodExact(String, ClassLoader, String, Object...)} for details.
      */
     public static Method findMethodExact(Class<?> clazz, String methodName, Object... parameterTypes) {
+        XposedBridge.log("className:  "+ clazz.getName()+ "   methodName:  " + methodName);
         return findMethodExact(clazz, methodName, getParameterClasses(clazz.getClassLoader(), parameterTypes));
     }
 
@@ -404,6 +405,7 @@ public final class XposedHelpers {
      */
     public static Method findMethodExactIfExists(Class<?> clazz, String methodName, Object... parameterTypes) {
         try {
+            XposedBridge.log("className:  "+ clazz.getName()+ "   methodName:  " + methodName);
             return findMethodExact(clazz, methodName, parameterTypes);
         } catch (ClassNotFoundError | NoSuchMethodError e) {
             return null;
@@ -728,7 +730,7 @@ public final class XposedHelpers {
     public static XC_MethodHook.Unhook findAndHookConstructor(Class<?> clazz, Object... parameterTypesAndCallback) {
         if (parameterTypesAndCallback.length == 0 || !(parameterTypesAndCallback[parameterTypesAndCallback.length - 1] instanceof XC_MethodHook))
             throw new IllegalArgumentException("no callback defined");
-
+        XposedBridge.log("className:  "+ clazz.getName());
         XC_MethodHook callback = (XC_MethodHook) parameterTypesAndCallback[parameterTypesAndCallback.length - 1];
         Constructor<?> m = findConstructorExact(clazz, getParameterClasses(clazz.getClassLoader(), parameterTypesAndCallback));
 
@@ -1025,6 +1027,7 @@ public final class XposedHelpers {
      */
     public static Object getObjectField(Object obj, String fieldName) {
         try {
+            XposedBridge.log("getObjectField:  "+ obj.getClass().getName()+ "  fieldName:  "+ fieldName);
             return findField(obj.getClass(), fieldName).get(obj);
         } catch (IllegalAccessException e) {
             // should not happen
@@ -1451,6 +1454,7 @@ public final class XposedHelpers {
      */
     public static Object callMethod(Object obj, String methodName, Object... args) {
         try {
+            XposedBridge.log("callMethod-  "+ obj.getClass().getName()+ "  methodName:  " + methodName);
             return findMethodBestMatch(obj.getClass(), methodName, args).invoke(obj, args);
         } catch (IllegalAccessException e) {
             // should not happen
@@ -1472,6 +1476,7 @@ public final class XposedHelpers {
      */
     public static Object callMethod(Object obj, String methodName, Class<?>[] parameterTypes, Object... args) {
         try {
+            XposedBridge.log("callMethod-  "+ obj.getClass().getName()+ "  methodName:  " + methodName);
             return findMethodBestMatch(obj.getClass(), methodName, parameterTypes, args).invoke(obj, args);
         } catch (IllegalAccessException e) {
             // should not happen
@@ -1496,6 +1501,7 @@ public final class XposedHelpers {
      */
     public static Object callStaticMethod(Class<?> clazz, String methodName, Object... args) {
         try {
+            XposedBridge.log("callMethod-  "+ clazz.getName()+ "  methodName:  " + methodName);
             return findMethodBestMatch(clazz, methodName, args).invoke(null, args);
         } catch (IllegalAccessException e) {
             // should not happen
@@ -1517,6 +1523,7 @@ public final class XposedHelpers {
      */
     public static Object callStaticMethod(Class<?> clazz, String methodName, Class<?>[] parameterTypes, Object... args) {
         try {
+            XposedBridge.log("callMethod-  "+ clazz.getName()+ "  methodName:  " + methodName);
             return findMethodBestMatch(clazz, methodName, parameterTypes, args).invoke(null, args);
         } catch (IllegalAccessException e) {
             // should not happen
@@ -1561,6 +1568,7 @@ public final class XposedHelpers {
      */
     public static Object newInstance(Class<?> clazz, Object... args) {
         try {
+            XposedBridge.log("newInstance-  "+ clazz.getName());
             return findConstructorBestMatch(clazz, args).newInstance(args);
         } catch (IllegalAccessException e) {
             // should not happen
@@ -1584,6 +1592,7 @@ public final class XposedHelpers {
      */
     public static Object newInstance(Class<?> clazz, Class<?>[] parameterTypes, Object... args) {
         try {
+            XposedBridge.log("newInstance-  "+ clazz.getName());
             return findConstructorBestMatch(clazz, parameterTypes, args).newInstance(args);
         } catch (IllegalAccessException e) {
             // should not happen
