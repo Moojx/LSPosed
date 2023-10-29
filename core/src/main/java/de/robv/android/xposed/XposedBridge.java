@@ -243,6 +243,7 @@ public final class XposedBridge {
     @SuppressWarnings("UnusedReturnValue")
     public static Set<XC_MethodHook.Unhook> hookAllMethods(Class<?> hookClass, String methodName, XC_MethodHook callback) {
         Set<XC_MethodHook.Unhook> unhooks = new HashSet<>();
+        log("hookedClassName:  " + hookClass.getName()+ "methodName: " + methodName);
         for (Member method : hookClass.getDeclaredMethods())
             if (method.getName().equals(methodName))
                 unhooks.add(hookMethod(method, callback));
@@ -258,6 +259,7 @@ public final class XposedBridge {
      */
     @SuppressWarnings("UnusedReturnValue")
     public static Set<XC_MethodHook.Unhook> hookAllConstructors(Class<?> hookClass, XC_MethodHook callback) {
+        log("hookAllConstructors- :  " + hookClass.getName());
         Set<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (Member constructor : hookClass.getDeclaredConstructors())
             unhooks.add(hookMethod(constructor, callback));
